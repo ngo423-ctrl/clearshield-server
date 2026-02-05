@@ -48,3 +48,44 @@ app.post('/api/intake', (req, res) => {
 app.listen(process.env.PORT || 3000, () => {
   console.log('ClearShield Intake server running');
 });
+app.post("/intake", (req, res) => {
+  const { name, phone, email, vin, insurance_type, warning_lights, service } = req.body;
+
+  const query = `
+    INSERT INTO intakes (name, phone, email, vin, insurance_type, warning_lights, service)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `;
+
+  db.run(
+    query,
+    [name, phone, email, vin, insurance_type, warning_lights, service],
+    function (err) {
+      if (err) {
+        return res.status(500).json({ error: "Database error" });
+      }
+      res.json({ success: true, id: this.lastID });
+    }
+  );
+});
+app.get("/intakes", (req, res) => {
+  db.all("SELECT * FROM intakes ORDER BY created_at DESC", [], (err, rows) => {
+    if (err) {
+      return res.status(500).json({ error: "Database error" });
+    }
+    res.json(rows);
+  });
+});
+app.get("/intake/:id", (req, res) => {
+  const id = req.params.id;
+
+  db.get("SELECT * FROM intakes WHERE id = ?", [id], (err, row) => {
+    if (err) {
+      return res.status(500).json({ error: "Database error" });
+    }
+    if (!row) {
+      return res.status(404).json({ error: "Not found" });
+    }
+    res.json(row);
+  });
+});
+
